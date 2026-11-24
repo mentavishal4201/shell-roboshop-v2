@@ -1,43 +1,14 @@
 #!/bin/bash
 
+app_name="catalogue"
 source ./common.sh
 
-dnf module disable nodejs -y &>> $logs_file
-dnf module enable nodejs:24 -y &>> $logs_file
-dnf install nodejs -y &>> $logs_file
-validate $? "Installing nodejs 24"
+check_root
+app_setup
+nodejs_setup
+systemd_setup
 
-id roboshop &>> $logs_file
-if [ $? -ne 0 ]; then
-    useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>> $logs_file
-    validate $? "Creating system user"
-else
-    echo -e "$(timestamp) [INFO] System user roboshop already exist...${Y}SKIPPING${N}"
-fi
 
-rm -rf /app
-validate $? "Removing old code"
-
-mkdir -p /app
-validate $? "Creating app directory"
-
-curl -L -o /tmp/catalogue.zip https://raw.githubusercontent.com/daws-92s/roboshop-documentation/refs/heads/main/artifacts/catalogue-v4.zip &>> $logs_file
-validate $? "Downloading catalogue"
-
-cd /app
-unzip /tmp/catalogue.zip &>> $logs_file
-validate $? "Unzipping catalogue"
-
-npm install &>> $logs_file
-validate $? "Installing dependencies"
-
-sed -i "s/DOMAIN_NAME/$domain_name/g" "$scripts_dir/catalogue.service"
-cp "$scripts_dir/catalogue.service" /etc/systemd/system/catalogue.service
-
-systemctl daemon-reload &>> $logs_file
-systemctl enable catalogue &>> $logs_file
-systemctl start catalogue &>> $logs_file
-validate $? "Starting and enabling catalogue"
 
 cp "$scripts_dir/mongo.repo" /etc/yum.repos.d/mongo.repo
 validate $? "Adding Mongo repo"
@@ -55,7 +26,6 @@ else
     echo -e "$(timestamp) [INFO] Products are already loaded...${Y}SKIPPING${N}"
 fi
 
-systemctl restart catalogue
-validate $? "Restarting Catalogue"
+retstart
 
 total_time
