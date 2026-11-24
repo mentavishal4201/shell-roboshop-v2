@@ -18,6 +18,10 @@ fi
 
 }
 
+timestamp(){
+    date +"%F %T"
+}
+
 mkdir -p $logs_folder
 
 echo "Script started execution at $(date +"%F %T")" &>> $logs_file
